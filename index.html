@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      heading{   
+    font-size: 42px;
+      }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family:Consolas;
+        }
+
+        canvas {
+            display: block;
+            border: 1px solid #000;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background-color: #fff;
+            padding: 10px;
+            box-sizing: border-box;
+            opacity: 0.7;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        label, select, input, button {
+            margin-bottom: 10px;
+        }
+
+        #hamburger-btn {
+            display: none;
+            cursor: pointer;
+            font-size: 24px;
+            background: none;
+            border: none;
+            padding: 0;
+            margin-bottom: 10px;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+
+        #heading {
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        @media only screen and (max-width: 600px) {
+            #controls {
+                display: none;
+                width: 100%;
+            }
+
+            #hamburger-btn {
+                display: block;
+            }
+        }
+
+        @media only screen and (min-width: 601px) {
+            #hamburger-btn {
+                display: none;
+            }
+
+            #controls {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            #controls label,
+            #controls select,
+            #controls input,
+            #controls button {
+                display: block;
+                width: 100%;
+            }
+        }
+    </style>
+    <title>Drawie - Drawing App</title>
+</head>
+<body>
+    <h1 id="heading" style="font-size: 42px;">Drawie</h1>
+    <canvas id="drawingCanvas"></canvas>
+
+    <div id="controls">
+        <label for="drawingMode">Drawing Mode:</label>
+        <select id="drawingMode">
+            <option value="draw" selected>Draw</option>
+            <option value="erase">Erase</option>
+        </select>
+
+        <label for="brushSize">Brush Size:</label>
+        <input type="range" id="brushSize" min="1" max="50" value="10">
+
+        <label for="colorPicker">Circle Color:</label>
+        <input type="color" id="colorPicker" value="#000000">
+
+        <label for="backgroundColorPicker">Background Color:</label>
+        <input type="color" id="backgroundColorPicker" value="#ffffff">
+
+        <button id="eraseAll">Erase All</button>
+    </div>
+
+    <button id="hamburger-btn" onclick="toggleControls">&#10148;</button>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const context = canvas.getContext('2d');
+        const brushSizeInput = document.getElementById('brushSize');
+        const colorPicker = document.getElementById('colorPicker');
+        const backgroundColorPicker = document.getElementById('backgroundColorPicker');
+        const drawingModeSelect = document.getElementById('drawingMode');
+        const eraseAllButton = document.getElementById('eraseAll');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const controls = document.getElementById('controls');
+
+        let isDrawing = false;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        brushSizeInput.addEventListener('input', updateBrushSize);
+        colorPicker.addEventListener('input', updateColor);
+        backgroundColorPicker.addEventListener('input', updateBackgroundColor);
+        drawingModeSelect.addEventListener('change', updateMode);
+        eraseAllButton.addEventListener('click', eraseAll);
+
+        hamburgerBtn.addEventListener('click', toggleControls);
+
+        function startDrawing(e) {
+            if (e.target.tagName.toLowerCase() === 'button') {
+                return; // Ignore clicks on buttons
+            }
+
+            isDrawing = true;
+            if (drawingModeSelect.value === 'erase') {
+                context.globalCompositeOperation = 'destination-out';
+                context.beginPath();
+                context.arc(e.clientX, e.clientY, brushSizeInput.value / 2, 0, 2 * Math.PI);
+                context.fill();
+                context.closePath();
+            } else {
+                context.globalCompositeOperation = 'source-over';
+                context.beginPath();
+                context.moveTo(e.clientX, e.clientY);
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const x = e.clientX;
+            const y = e.clientY;
+
+            if (drawingModeSelect.value === 'draw') {
+                context.strokeStyle = colorPicker.value;
+                context.lineWidth = brushSizeInput.value;
+                context.lineTo(x, y);
+                context.stroke();
+            } else if (drawingModeSelect.value === 'erase') {
+                context.clearRect(x - brushSizeInput.value / 2, y - brushSizeInput.value / 2, brushSizeInput.value, brushSizeInput.value);
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function updateBrushSize() {
+            if (drawingModeSelect.value === 'erase') {
+                context.globalCompositeOperation = 'destination-out';
+                context.fillStyle = backgroundColorPicker.value;
+            } else {
+                context.globalCompositeOperation = 'source-over';
+                context.strokeStyle = colorPicker.value;
+                context.fillStyle = colorPicker.value;
+            }
+            context.lineWidth = brushSizeInput.value;
+        }
+
+        function updateColor() {
+            if (drawingModeSelect.value === 'draw') {
+                context.strokeStyle = colorPicker.value;
+                context.fillStyle = colorPicker.value;
+            }
+        }
+
+        function updateBackgroundColor() {
+            canvas.style.backgroundColor = backgroundColorPicker.value;
+        }
+
+        function updateMode() {
+            // Not needed for seamless line drawing
+        }
+
+        function eraseAll() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function toggleControls() {
+            controls.style.display = (controls.style.display === 'none' || controls.style.display === '') ? 'flex' : 'none';
+        }
+    </script>
+</body>
+</html>

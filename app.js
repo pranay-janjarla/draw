@@ -284,3 +284,15 @@ function toggleControls() {
         controls.style.width = '100%'; // Adjust the width as needed
     }
 }
+
+
+const saveCanvasButton = document.getElementById('saveCanvas');
+saveCanvasButton.addEventListener('click', saveCanvas);
+
+function saveCanvas() {
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = 'drawing.png';
+    link.click();
+}
